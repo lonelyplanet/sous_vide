@@ -60,6 +60,22 @@ module SousVide
 
     attr_accessor :completed_at
 
+    # Chef resource identity, uniquely refers to a given resource of particular type.
+    attr_accessor :identity
+
+    # Resource diff, populated in :resource_updated event.
+    attr_accessor :diff
+
+    # Resource attributes Chef loaded from the system (actual state)
+    attr_accessor :loaded_attributes
+
+    # Resource attributes defined in Chef (wanted state)
+    attr_accessor :wanted_attributes
+
+    # Indicates whatever this resource's attributes were loaded by Chef. This will be false when a
+    # resource is skipped.
+    attr_accessor :attributes_loaded
+
     # Chef API resource. It is used for comparsion only.
     # @api private
     attr_accessor :chef_resource_handle
@@ -70,12 +86,7 @@ module SousVide
       @type = type
 
       @status = "unprocessed"
-      @duration_ms = nil
-      @guard_description = nil
-
       @retries = 0
-      @error_output = nil
-      @error_source = nil
     end
 
     # String and human friendly represtnation of the resource
@@ -89,12 +100,14 @@ module SousVide
     def to_h
       {
         chef_resource: "#{@type}[#{@name}]##{@action}",
+        chef_resource_id: @identity,
         chef_resource_name: @name,
         chef_resource_type: @type,
         chef_resource_cookbook: @cookbook_name,
         chef_resource_recipe: @cookbook_recipe,
         chef_resource_action: @action,
         chef_resource_guard: @guard_description,
+        chef_resource_diff: @diff,
         chef_resource_duration_ms: @duration_ms,
         chef_resource_error_output: @error_output,
         chef_resource_error_source: @error_source,

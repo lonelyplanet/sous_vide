@@ -2,7 +2,7 @@ class StubbedResource
   attr_accessor :name, :resource_name, :action, :cookbook_name, :recipe_name,
     :before_notifications, :immediate_notifications, :delayed_notifications,
     :notifying_resource, :notification_type, :source_line, :elapsed_time,
-    :error_source, :error_output, :guard
+    :error_source, :error_output, :guard, :identity
 
 
   def initialize
@@ -20,6 +20,10 @@ class StubbedResource
 
   def ==(other)
     to_text == other.to_text && action == other.action
+  end
+
+  def identity
+    name
   end
 
   def to_text

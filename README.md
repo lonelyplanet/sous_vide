@@ -7,7 +7,7 @@
 
 SousVide is a Chef Handler you can use to collect & visualize `chef-client` converge process. It receives event data from `chef-client` and keeps track of the converge process. It's essentially a stream parser hooked into `Chef::EventDispatch`.
 
-At the end you will have an extensive report about events occured during the run.
+At the end you will have an extensive report about events occurred during the run.
 
 Here's what SousVide will tell you:
 
@@ -26,6 +26,9 @@ Here's what SousVide will tell you:
 * more data about notifications
   - simple counters for each type
   - notification type & notifying resource when available
+* resource diffs
+  - file diff provided by Chef
+  - it's own service, package & user resources diff
 
 All this and more will be available in a flat JSON data structure.
 
@@ -60,14 +63,16 @@ Once SousVide is registered, it's for the most part up to you to consume the out
 ```json
 [
   {
-    "chef_resource": "execute[wait-for-logstash]#run",
-    "chef_resource_name": "wait-for-logstash",
-    "chef_resource_type": "execute",
+    "chef_resource": "service[start ntp]#start",
+    "chef_resource_id": "ntp",
+    "chef_resource_name": "start ntp",
+    "chef_resource_type": "service",
     "chef_resource_cookbook": "sous_vide",
-    "chef_resource_recipe": "default",
-    "chef_resource_action": "run",
+    "chef_resource_recipe": "e2e",
+    "chef_resource_action": "start",
     "chef_resource_guard": null,
-    "chef_resource_duration_ms": 17,
+    "chef_resource_diff": "Running: no. Wants yes.",
+    "chef_resource_duration_ms": 20,
     "chef_resource_error_output": null,
     "chef_resource_error_source": null,
     "chef_resource_retries": 0,
@@ -76,18 +81,18 @@ Once SousVide is registered, it's for the most part up to you to consume the out
     "chef_resource_before_notifications": 0,
     "chef_resource_immediate_notifications": 0,
     "chef_resource_delayed_notifications": 0,
-    "chef_resource_order": 47,
+    "chef_resource_order": 51,
     "chef_resource_execution_phase": "converge",
-    "chef_resource_started_at": "2019-04-01 11:46:24",
-    "chef_resource_completed_at": "2019-04-01 11:46:24",
+    "chef_resource_started_at": "2019-09-27 13:08:46",
+    "chef_resource_completed_at": "2019-09-27 13:08:46",
     "chef_resource_status": "updated",
-    "chef_node_ipv4": "172.17.0.2",
-    "chef_node_instance_id": "default-ubuntu-1604",
-    "chef_node_role": "elasticsearch",
-    "chef_run_id": "133e4189",
-    "chef_run_name": "2019-04-01 11:46:18 elasticsearch 172.17.0.2 133e4189",
-    "chef_run_started_at": "2019-04-01 11:46:18",
-    "chef_run_completed_at": "2019-04-01 11:46:24",
+    "chef_node_ipv4": "<no ip>",
+    "chef_node_instance_id": "e2e-ubuntu-1804",
+    "chef_node_role": "e2e",
+    "chef_run_id": "22b38923",
+    "chef_run_name": "2019-09-27 13:08:04 e2e <no ip> 22b38923",
+    "chef_run_started_at": "2019-09-27 13:08:04",
+    "chef_run_completed_at": "2019-09-27 13:08:48",
     "chef_run_success": true
   }
 ]
@@ -119,6 +124,48 @@ SousVide output can be any object that responds to `call` method (a simple proc 
 def call(run_data:, node_data:, resources_data:)
   # ... something interesting
 end
+```
+
+### Resource diffs
+
+Package diff (install action):
+```
+    Packages: sous-package-one, sous-package-two, sous-package-three
+    Current versions: 0.0.1, 0.0.2, 0.0.2
+    Wanted versions: 0.0.2, 0.0.2, any
+```
+
+Service diff (stop action):
+```
+    Running: yes. Wants no.
+```
+
+Service diff (enable action):
+```
+    Enabled: yes. Wants yes.
+```
+
+User diff (manage action):
+```
+    Username: sous-user
+
+    User will be updated.
+
+    Current attributes:
+
+    UID:      12345
+    GID:      12345
+    Home:     /home/sous-user
+    Shell:    /bin/bash
+    Comment:  Modified user comment
+
+    Chef attributes:
+
+    UID:
+    GID:
+    Home:
+    Shell:
+    Comment:  Managed user comment
 ```
 
 ## Demo

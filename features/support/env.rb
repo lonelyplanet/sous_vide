@@ -41,8 +41,8 @@ module CucumberContext
 
   def resource_action_start
     sous_vide.resource_action_start(@chef_resource, @chef_resource.action,
-                                     @chef_resource.notification_type,
-                                     @chef_resource.notifying_resource)
+                                    @chef_resource.notification_type,
+                                    @chef_resource.notifying_resource)
     @current_resource = sous_vide.processing_now
   end
 
@@ -103,14 +103,3 @@ module CucumberContext
 end
 
 World(CucumberContext)
-
-# Reset the handler to it's initial state.
-Before do
-  set_handler_variable("resource_collection_cursor", 0)
-  set_handler_variable("execution_order", 0)
-  set_handler_variable("run_started_at", Time.now.strftime("%F %T"))
-  set_handler_variable("run_phase", "compile")
-  set_handler_variable("processed", [])
-  set_handler_variable("processing_now", nil)
-  reset_chef_run_context!
-end

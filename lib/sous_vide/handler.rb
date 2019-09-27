@@ -1,6 +1,7 @@
 require "sous_vide/tracked_resource"
 require "sous_vide/event_methods"
 require "sous_vide/outputs"
+require "sous_vide/diff_builder"
 
 require "securerandom"
 require "singleton"
@@ -207,6 +208,8 @@ module SousVide
     # It is called at the end of the converge process, both failure and success.
     def send_to_output!
       @sous_output.call(run_data: run_data, node_data: node_data, resources_data: @processed)
+    rescue => e
+      logger.warn("Output failed: #{e.message}")
     end
 
     # Creates SousVide::TrackedResource from Chef resource and action.
@@ -219,6 +222,13 @@ module SousVide
       tracked = TrackedResource.new(action: action,
                                     name: chef_resource.name,
                                     type: chef_resource.resource_name)
+
+      # Some resources (ie package) accept an array. Join it so the JSON stays flat & consistent.
+      tracked.identity = if chef_resource.identity.is_a?(Array)
+                           chef_resource.identity.join(", ")
+                         else
+                           chef_resource.identity
+                         end
 
       tracked.cookbook_name = chef_resource.cookbook_name || "<Dynamically Defined Resource>"
       tracked.cookbook_recipe = chef_resource.recipe_name || "<Dynamically Defined Resource>"
@@ -291,6 +301,21 @@ module SousVide
         Array(chef_resource.action).map do |action|
           create(chef_resource: chef_resource, action: action)
         end
+      end
+    end
+
+    # Returns a hash of resource attributes. Example:
+    #
+    #   get_chef_attributes(user, :uid, :gid, :home, :shell, :comment)
+    #
+    #   # => { uid: 123, gid: 123, home: '/home/user', ... }
+    #
+    # @param chef_resource [Chef::Resource]
+    # @param attributes [Array<Symbol>] a list of attributes to extract.
+    def get_chef_attributes(chef_resource, *attributes)
+      attributes.reduce({}) do |memo, attribute|
+        memo[attribute] = chef_resource.public_send(attribute)
+        memo
       end
     end
 

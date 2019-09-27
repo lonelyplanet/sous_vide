@@ -61,7 +61,44 @@ module SousVide
 
       debug("Received :resource_updated on #{@processing_now}")
       @processing_now.status = "updated"
+
       true
+    end
+
+    # Called after #load_current_resource has run
+    def resource_current_state_loaded(new_resource, action, current_resource)
+      return false if current_resource.nil? # probably a bug in Chef, but ie execute does not set
+                                            # instance_variable so Chef passes nil.
+      return false if @processing_now.nil? || nested?(new_resource) # ignore nested resources
+
+      debug("Received :resource_current_state_loaded on #{@processing_now}")
+
+      # Capture loaded & wanted attributes so it can be later used to build a diff.
+      # This is the only place we have access to 'current_resource'.
+      #
+      # The diff itself will be computed later, in :resource_completed event as it provides
+      # more flexibility and information.
+      @processing_now.loaded_attributes =
+        case current_resource
+        when Chef::Resource::Package
+          get_chef_attributes(current_resource, :version)
+        when Chef::Resource::Service
+          get_chef_attributes(current_resource, :running, :enabled)
+        when Chef::Resource::User
+          get_chef_attributes(current_resource, :uid, :gid, :home, :shell, :comment)
+        end
+
+      @processing_now.wanted_attributes =
+        case current_resource
+        when Chef::Resource::Package
+          get_chef_attributes(new_resource, :version)
+        when Chef::Resource::Service
+          get_chef_attributes(new_resource, :running, :enabled)
+        when Chef::Resource::User
+          get_chef_attributes(new_resource, :uid, :gid, :home, :shell, :comment)
+        end
+
+      @processing_now.attributes_loaded = true
     end
 
     # Called when a resource action has been skipped b/c of a conditional.
@@ -122,6 +159,16 @@ module SousVide
         @resource_collection_cursor += 1
       end
 
+      # Populate the diff at the end so the DiffBuilder can access fields that would not be
+      # available before, ie status. Additionaly the 'case' here avoids leaking abstraction.
+      @processing_now.diff =
+        case new_resource
+        when Chef::Resource::Package then DiffBuilder.package_diff(@processing_now)
+        when Chef::Resource::Service then DiffBuilder.service_diff(@processing_now)
+        when Chef::Resource::User then DiffBuilder.user_diff(@processing_now)
+        when Chef::Resource::File then DiffBuilder.file_diff(new_resource.diff)
+        end
+
       @processing_now.completed_at = Time.now.strftime("%F %T")
       @processed << @processing_now
       @processing_now = nil
@@ -170,7 +217,6 @@ module SousVide
       @run_completed_at = Time.now.strftime("%F %T")
       send_to_output!
     end
-
 
     # Called if the converge phase fails
     def converge_failed(_exception)

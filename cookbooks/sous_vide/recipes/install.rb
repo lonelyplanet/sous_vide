@@ -15,7 +15,7 @@ ruby_block "register sous handler" do
 
     SousVide.logger = logger
 
-    es = SousVide::Outputs::JsonHTTP.new(url: "http://elasticsearch:3000", max_retries: 10, logger: logger)
+    es = SousVide::Outputs::JsonHTTP.new(url: "http://elasticsearch:3000", max_retries: 20, logger: logger)
     json_file = SousVide::Outputs::JsonFile.new(logger: logger)
     stdout = SousVide::Outputs::Logger.new(logger: logger)
     multi = SousVide::Outputs::Multi.new(json_file, stdout, es)

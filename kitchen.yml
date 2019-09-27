@@ -1,8 +1,6 @@
 ---
-<% if (ARGV[0] == "converge") %>
 transport:
-  name: rsync
-<% end %>
+  name: rsync # https://github.com/kindredgroup/kitchen-transport-rsync
 
 driver:
   name: docker
@@ -10,22 +8,24 @@ driver:
   provision_command:
     # prevent APT from deleting the APT folder
     - rm /etc/apt/apt.conf.d/docker-clean
-    - apt-get install -y -q apt-transport-https rsync
+    - apt-get update >/dev/null 2>&1
+    - apt-get install -y -q apt-transport-https rsync git-core dpkg-dev >/dev/null 2>&1
     # allow test-kitchen to use root user (connects via ssh)
     - sed -i 's/prohibit-password/yes/' /etc/ssh/sshd_config
     # disable systemd since it doesn't work in docker
     - ln -sf /bin/true /bin/systemctl
     # install chef-client as part of the image, save time in the runtime
-    - curl -LO https://omnitruck.chef.io/install.sh && bash ./install.sh -v 12.17.44 && rm install.sh
+    - curl -LO https://omnitruck.chef.io/install.sh && bash ./install.sh && rm install.sh
     - ln /opt/chef/bin/chef-client /bin/chef-client
+    - touch /opt/chef/.license.accepted
+  volume:
+    - $PWD:/sous_vide/
   username: root
   password: root
 
-verifier:
-  sudo: false
-
 provisioner:
-  install_strategy: 'skip'
+  install_strategy: skip
+  chef_license: accept
 
 platforms:
   - name: ubuntu-16.04
@@ -52,9 +52,14 @@ suites:
           - elasticsearch
       java:
         jdk_version: 8
+        jdk:
+          '8':
+            bin_cmds:
+              - java
       elasticsearch:
         install:
           version: "6.6.2"
+  # Examples
   - name: tomcat
     includes:
       - ubuntu-18.04
@@ -101,3 +106,14 @@ suites:
           - nginx::ngx_lua_module
           - nginx::openssl_source
           - nginx::upload_progress_module
+  # For e2e tests
+  - name: e2e
+    includes:
+      - ubuntu-18.04
+    attributes:
+      kitchen:
+        roles:
+          - e2e
+    run_list:
+      - sous_vide::build
+      - sous_vide::e2e

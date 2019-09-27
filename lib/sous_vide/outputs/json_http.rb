@@ -16,7 +16,9 @@ module SousVide
       # @return [Net::HTTP]
       attr_accessor :http_client
 
+      # @param url [String] http endpoint payload will be sent to
       # @param max_retries [Fixnum] number retries across all requests made.
+      # @param logger [Object, nil] a logger object this output will print messages to
       def initialize(url:, max_retries: 2, logger: nil)
         @endpoint = URI(url)
         @logger = logger

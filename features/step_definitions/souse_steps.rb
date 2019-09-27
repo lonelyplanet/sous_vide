@@ -51,3 +51,13 @@ Given("chef resource is a {string} notification") do |type|
 
   @chef_resource.notifying_resource = notifier unless type == "delayed"
 end
+
+Given("I reset SousVide state") do
+  set_handler_variable("resource_collection_cursor", 0)
+  set_handler_variable("execution_order", 0)
+  set_handler_variable("run_started_at", Time.now.strftime("%F %T"))
+  set_handler_variable("run_phase", "compile")
+  set_handler_variable("processed", [])
+  set_handler_variable("processing_now", nil)
+  reset_chef_run_context!
+end

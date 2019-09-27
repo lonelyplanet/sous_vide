@@ -9,7 +9,8 @@ Feature: Event processing
   the handler and relevant properties of the processed resource.
 
   Background:
-    Given Chef why-run mode is disabled
+    Given I reset SousVide state
+    And Chef why-run mode is disabled
     And I have a chef resource "execute[/bin/true]" with action "install"
     And the "run_phase" is "converge"
 
