@@ -278,7 +278,7 @@ GEM
       rubyzip (~> 1.1)
       winrm (~> 2.0)
     wmi-lite (1.0.2)
-    yard (0.9.19)
+    yard (0.9.20)
 
 PLATFORMS
   ruby
