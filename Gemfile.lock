@@ -181,7 +181,7 @@ GEM
       method_source (~> 0.9.0)
     public_suffix (3.0.3)
     rack (2.0.6)
-    rake (10.5.0)
+    rake (13.0.1)
     retryable (2.0.4)
     ridley (5.1.1)
       addressable
@@ -291,7 +291,7 @@ DEPENDENCIES
   kitchen-docker
   kitchen-transport-rsync
   pry
-  rake (~> 10.0)
+  rake (~> 13.0)
   test-kitchen
   yard
 
